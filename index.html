@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Who's Hungry 2024</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://use.typekit.net/zpf3fbu.css">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            font-family: "calibri", sans-serif;
+            font-weight: 700;
+            font-style: normal;
+            font-size: 0.85rem;
+            margin: 0;
+            padding: 0;
+            display:grid;
+            grid-template-columns: 25.7% auto;
+            grid-template-rows: auto;
+            overflow: hidden;
+        }
+
+        body, p, h1, .clicked_labels, .info_values {
+            color: #231F20
+        }
+
+        #upper_panel {
+            grid-column: 1 / span 2;
+            grid-row: 1;
+            background-color: #fee08b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 115px;
+            padding-right: 20px;
+            padding-left: 8px;
+        }
+
+        #upper_panel h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            padding-left: 10px;
+        }
+
+        #logo_image {
+            width: 180px;
+            cursor: pointer;
+        }
+
+        #map_container {
+        height: 100%;
+        width: 100%;
+        }
+
+        #map_selections {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            height: 5%;
+            background-color: #F2F2F2;
+        }
+
+        .map_select {
+            width: 23%;
+            height: 100%;
+            background-color: #F2F2F2;
+            font-family: 'calibri', sans-serif;
+            color: #167ba2;
+            border-width: 0;
+            font-size: 1.1vw;
+            font-weight: 600;
+        }
+
+        .map_select:hover {
+            cursor: pointer;
+        }
+
+        option {
+            font-family: 'calibri', sans-serif;
+        }
+
+        #map {
+            grid-column: 2;
+            grid-row: 2;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #side_panel {
+            height: 100%;
+            width: 35%
+            grid-column: 1;
+            grid-row: 2;
+            background-color: #f1f1f1;
+            padding: 20px;
+            padding-top: 0px;
+            margin-bottom: 10px;
+            grid-row: span 2;
+        }
+
+        .info_rows {
+            /* border-bottom: 1px solid #000; */
+            padding-bottom: 2.5px;
+            margin-bottom: 1px;
+            display: flex;
+            justify-content: start;
+            align-items: center;
+        }
+
+        .info_rows:last-child {
+            margin-bottom: 20;
+        }
+
+        .info_labels_containers {
+            font-weight: medium;
+            font-size: medium;
+            padding-right: 4px;
+        }
+
+        .info_values_containers {
+            text-align: center;
+            font-weight: medium;
+            font-size: medium;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .checkbox_container {
+            padding: 10px;
+            background-color: #f2f2f2;
+            color: #167ba2;
+        }
+
+        .legend-container {
+            position: absolute; 
+            bottom: 30px;
+            right: 20px;
+            border: 1px solid #231F20;
+            padding:10px;
+            background-color: #f1f1f1;
+            z-index: 1;
+        }
+
+        .legend-title { 
+            font-size: 1rem;
+            margin: 0 0 10px;
+        }
+
+        .legend-color-scale {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-scale-marker {
+            height: 20px;
+            width: 50px;
+        }
+
+        .legend-scale-labels {
+            display: flex; 
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        #legend-info-container {
+            position: absolute;
+            bottom: 130px;
+            right: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            z-index: 1;
+        }
+
+        .legend-info {
+            font-size: 1rem;
+            margin: 0;
+            text-align: center;
+        }
+
+        .tooltips {
+            height: 15px;
+            width: 15px;
+        }
+
+        .tooltip_containers {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-content: center;
+            width: 5%;
+        }
+
+        .tooltip_containers .tooltiptext {
+            visibility: hidden;
+            width: 17.5vw;
+            padding: 0.25vw;
+            left: 105%;
+            background-color: #0097a9;
+            color: white;
+            text-align: center;
+            border-radius: 0.5vw;
+            padding: 5%;
+            font-size: 0.75vw;
+            opacity: 0;
+            transition: opacity 0.5s;
+            position: absolute;
+            z-index: 10;
+        }
+
+        .tooltip_containers:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip_inner {
+            fill: #fec325;
+        }
+
+        .tooltip_containers:hover .tooltip_inner {
+            fill: #0097a9;
+        }
+
+        .tooltip_inner_text {
+            color: #ffffff;
+            font-size: 0.75vw;
+            font-weight: 600;
+        }
+
+        .tooltip_containers:hover .tooltip_inner_text {
+            color: #ffffff;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- Adds text to the upper panel -->
+    
+    <div id="upper_panel">
+        <h1 style="font-size: 2.5rem; font-weight: bolder">Who's Hungry 2024</h1>
+        <a href="https://oneofakindshow.com/" target="_blank">
+            <img id="logo_image" src="https://knect365.imgix.net/uploads/DailyBread-RGB-Horizontal-75b36e49e3a46aba7e6875394dfabfc3.png?auto=format&fit=max&w=412&dpr=5" alt="Daily Bread Logo">
+        </a>
+    </div>
+
+    <!-- Adds text to the side panel -->
+
+    <div id="side_panel">
+        <p style="font-size: 1.1rem; font-weight: medium">Select data from the drop down menus and click on a ward to find out more about the key indicators.</p>
+
+        <div class="info_rows">
+            <div class="tooltip_containers">
+                <svg id="about_tooltip_ward" class="tooltips about_tooltips">
+                    <circle class="tooltip_inner" cx="7.5" cy="7.5" r="6"></circle>
+                    <text class="tooltip_inner_text" x="7.5" y="7.5" style="dominant-baseline: middle; text-anchor: middle; fill: white;">i</text>
+                </svg>
+                <span class="tooltiptext">"The City of Toronto is divided into 25 Electoral Wards as of December, 2018 (City of Toronto, 2018)</span>
+            </div>
+            <div class="info_labels_containers row_content">
+                <p class="clicked_labels" style="margin-bottom: 0.2rem">Toronto Ward: </p>
+            </div>
+            <div class="info_values_containers geography_values_containers row_content">
+                <p class="info_values geography_values" style="color: #167ba2; margin-bottom: 0.2rem" id="info_value_geography"></p>
+            </div>
+        </div>
+
+        <div class="info_rows">
+            <div class="tooltip_containers">
+                <svg id="about_tooltip_population" class="tooltips about_tooltips">
+                    <circle class="tooltip_inner" cx="7.5" cy="7.5" r="6"></circle>
+                    <text class="tooltip_inner_text" x="7.5" y="7.5" style="dominant-baseline: middle; text-anchor: middle; fill: white;">i</text>
+                </svg>
+                <span class="tooltiptext">2021 census population</span>
+            </div>
+            <div class="info_labels_containers row_content">
+                <p class="clicked_labels" style="margin-bottom: 0.2rem;">Population: </p>
+            </div>
+            <div class="info_values_containers population_containers row_content">
+                <p class="info_values population_values_num" style="color: #167ba2; margin-bottom: 0.2rem" id="info_value_population"></p>
+            </div>
+        </div>
+
+        <div class="info_rows"> 
+            <div class="tooltip_containers">
+                <svg id="about_tooltip_medianincome" class="tooltips about_tooltips">
+                    <circle class="tooltip_inner" cx="7.5" cy="7.5" r="6"></circle>
+                    <text class="tooltip_inner_text" x="7.5" y="7.5" style="dominant-baseline: middle; text-anchor: middle; fill: white;">i</text>
+                </svg>
+                <span class="tooltiptext">Median income after tax in 2020 among recipients aged 15 and older in private households (Statistics Canada, 2021)</span>
+            </div><div class="info_labels_containers row_content">
+                <p class="clicked_labels" style="margin-bottom: 0.2rem">Median income: </p>
+            </div>
+            <div class="info_values_containers medianincome_values_containers row_content">
+                <p class="info_values medianincome_values" style="color: #167ba2; margin-bottom: 0.2rem" id="info_value_medianincome"></p>
+            </div>
+        </div>
+
+        <div class="info_rows"> 
+            <div class="tooltip_containers">
+                <svg id="about_tooltip_labourforce" class="tooltips about_tooltips">
+                    <circle class="tooltip_inner" cx="7.5" cy="7.5" r="6"></circle>
+                    <text class="tooltip_inner_text" x="7.5" y="7.5" style="dominant-baseline: middle; text-anchor: middle; fill: white;">i</text>
+                </svg>
+                <span class="tooltiptext">The rate of unemployment in 2020 among the population aged 15 and over by labour force status (Statistics Canada, 2021)</span>
+            </div>
+            <div class="info_labels_containers row_content">
+                <p class="clicked_labels" style="margin-bottom: 0.2rem">Unemployment: </p>
+            </div>
+            <div class="info_values_containers labourforce_values_containers row_content">
+                <p class="info_values labourforce_values" style="color: #167ba2; margin-bottom: 0.2rem" id="info_value_labourforce"></p>
+            </div>
+        </div>
+
+        <div class="info_rows"> 
+            <div class="tooltip_containers">
+                <svg id="about_tooltip_LIM" class="tooltips about_tooltips">
+                    <circle class="tooltip_inner" cx="7.5" cy="7.5" r="6"></circle>
+                    <text class="tooltip_inner_text" x="7.5" y="7.5" style="dominant-baseline: middle; text-anchor: middle; fill: white;">i</text>
+                </svg>
+                <span class="tooltiptext">Prevalence of low income status for the population in private households in 2020 based on the low-income measure, after tax (LIM-AT) (Statistics Canada, 2021)</span>
+            </div>
+            <div class="info_labels_containers row_content">
+                <p class="clicked_labels" style="margin-bottom: 0.2rem">Low income: </p>
+            </div>
+            <div class="info_values_containers LIM_values_containers row_content">
+                <p class="info_values LIM_values" style="color: #167ba2; margin-bottom: 0.2rem" id="info_value_LIM"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="legend" class="legend-container">
+            <p class="legend-title">Proportion of Who's Hungry respondents</p>
+            <div class="legend-color-scale">
+                <div class="legend-scale-marker" style="background-color: #f2f2f2;"></div>
+                <div class="legend-scale-marker" style="background-color: #fedd81;"></div>
+                <div class="legend-scale-marker" style="background-color: #ffc72e;"></div>
+                <div class="legend-scale-marker" style="background-color: #f2b23a;"></div>
+                <div class="legend-scale-marker" style="background-color: #e0893e;"></div>
+                <div class="legend-scale-marker" style="background-color: #ca6749;"></div>
+            </div>
+            <!-- Command F legendscale to find where you should also change your the numbers -->
+            <!-- Change these numbers to correspond to the colours displayed on the map if you've changed them  -->
+            <div class="legend-scale-labels">
+                <span class="legend_stop_0" id="stop_0"></span>
+                <span class="legend_stop_1" id="stop_1"></span>
+                <span class="legend_stop_2" id="stop_2"></span>
+                <span class="legend_stop_3" id="stop_3"></span>
+                <span class="legend_stop_4" id="stop_4"></span>
+                <span class="legend_stop_5" id="stop_5"></span>
+            </div>
+        </div>
+
+    <div id="map_container">
+
+        <!-- Dropdown menus for the user to select variables -->
+        
+        <div id="map_selections">
+            <select name="food_insecurity" id="food_insecurity" class="map_select" onchange="insecurity_change()">
+                <option value="insecurity" style="font-weight: bold">Food insecurity measures</option>
+                <option value="adult">Adult hunger</option>
+                <option value="child">Child hunger</option>
+                <option value="freq">Frequency of use</option>
+                <option value="new">New clients</option>
+                <option value="enough">Adequacy of food bank services</option>
+            </select>
+
+            <select name="demographics" id="demographics" class="map_select" onchange="dem_change()">
+                <option value="dem" style="font-weight: bold">Demographic variables</option>
+                <option value="disabled" style="font-weight: bold">Disability</option>
+                <option value="lgbtq" style="font-weight: bold">LGBTQ+</option>
+                <optgroup label="Age">
+                    <option value="under_18" style="font-size: 0.85rem">Under 18</option>
+                    <option value="18-29" style="font-size: 0.85rem">18-29</option>
+                    <option value="30-44" style="font-size: 0.85rem">30-44</option>
+                    <option value="45-64" style="font-size: 0.85rem">45-64</option>
+                    <option value="65+" style="font-size: 0.85rem">Over 65</option>
+                </optgroup>
+                <optgroup label="Status">
+                    <option value="canadian" style="font-size: 0.85rem">Canadian citizen / Indigenous</option>
+                    <option value="pr" style="font-size: 0.85rem">Permanent resident / landed immigrant</option>
+                    <option value="refugee" style="font-size: 0.85rem">Refugee claimant</option>
+                    <option value="cuaet" style="font-size: 0.85rem">CUAET</option>
+                    <option value="temporary" style="font-size: 0.85rem">Temporary status</option>
+                    <option value="undocumented" style="font-size: 0.85rem">Undocumented</option>
+                </optgroup>
+                <optgroup label="Education">
+                    <option value="high_school_less" style="font-size: 0.85rem">Some high school or less</option>
+                    <option value="high_school" style="font-size: 0.85rem">High school or equivalent</option>
+                    <option value="degree" style="font-size: 0.85rem">Degree or diploma from a college or university</option>
+                    <option value="graduate" style="font-size: 0.85rem">Graduate or professional degree</option>
+                </optgroup>
+                <optgroup label="Race or ethnicity">
+                    <option value="indigenous" style="font-size: 0.85rem">First Nations, Inuit, or Metis</option>
+                    <option value="west_asian" style="font-size: 0.85rem">Arab, Middle Eastern, or West Asian</option>
+                    <option value="south_asian" style="font-size: 0.85rem">South Asian</option>
+                    <option value="southeast_asian" style="font-size: 0.85rem">Southeast Asian</option>
+                    <option value="east_asian" style="font-size: 0.85rem">East Asian</option>
+                    <option value="black" style="font-size: 0.85rem">Black</option>
+                    <option value="white" style="font-size: 0.85rem">White</option>
+                    <option value="latin" style="font-size: 0.85rem">Latin American</option>
+                </optgroup>
+            </select>
+
+            <select name="income" id="income" class="map_select" onchange="income_change()">
+                <option value="employment" style="font-weight: bold">Income and employment</option>
+                <option value="amount">Income</option>
+                <!-- <option value="primary">Primary income</option> -->
+                <option value="wages">Wages</option>
+                <option value="hours">Hours</option>
+                <!-- <option value="stability">Employment stability</option> -->
+                <option value="benefits">Benefits</option>
+            </select>
+
+            <select name="household" id="household" class="map_select" onchange="house_change()">
+                <option value="housing" style="font-weight: bold">Housing</option>
+                <option value="type">Housing type</option>
+                <option value="size">Household size</option>
+                <option value="composition">Household composition</option>
+                <option value="rent">Rent and utilities</option>
+            </select>
+        </div>
+
+        <div id="change" class="checkbox_container">
+            <input type="checkbox" id="change_over_time" name="change_over_time" value="change_yes">
+            <label for="change_checkbox"> Show change over time</label>
+        </div>
+
+        <!-- Loads the map -->
+        
+        <div id="map">
+         <script>
+            mapboxgl.accessToken = "pk.eyJ1IjoiamFuaWNlNDA0IiwiYSI6ImNtYW56cTZmZzAxcHUybXE0cmpmcng1dzEifQ.SUIs5UGxRbRMgrc9zC1PAg";
+            const map = new mapboxgl.Map({
+                container: 'map',
+                style: "mapbox://styles/mapbox/light-v11",
+                zoom: 9.65,
+                center: [-79.339610, 43.6683714],
+                minZoom: 8.5,
+                maxZoom: 13.0
+            });
+
+            var popup = new mapboxgl.Popup({
+            closeButton: false
+        })
+
+        // Updates the side panel with properties according to the ward selected
+        
+        function updateSidePanelInfo(properties) {
+            document.getElementById('info_value_geography').textContent = properties.ward_name;
+            document.getElementById('info_value_population').textContent = properties.population;
+            document.getElementById('info_value_medianincome').textContent = properties.median_annual_income;
+            document.getElementById('info_value_labourforce').textContent = properties.unemployment_rate;
+            document.getElementById('info_value_LIM').textContent = properties.low_income;
+        }
+
+        // Numerical breaks for each data variable - these are used later
+        
+        // Food insecurity stops
+        
+        const adult_hunger_stops = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+        const child_hunger_stops = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+        const use_freq_stops = [0.1, 0.2, 0.3, 0.4, 0.6, 0.8];
+        const new_clients_stops = [0.2, 0.4, 0.5, 0.6, 0.7, 0.9];
+        const not_enough_food_stops = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+        // Demographic stops
+
+        const disabled_stops = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+        const lgbtq_stops = [0, 0.04, 0.06, 0.07, 0.08, 0.1];
+
+        const under_18_stops = [0, 0.01, 0.02, 0.05, 0.06, 0.11];
+        const age_18_29_stops = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+        const age_30_44_stops = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+        const age_45_64_stops = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+        const over_65_stops = [0, 0.05, 0.1, 0.14, 0.16, 0.2];
+
+        const canadian_stops = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0];
+        const pr_stops = [0, 0.08, 0.1, 0.15, 0.2, 0.3];
+        const refugee_stops = [0, 0.05, 0.08, 0.13, 0.2, 0.3];
+        const cuaet_stops = [0, 0.05, 0.07, 0.1, 0.2, 0.3];
+        const temporary_stops = [0, 0.1, 0.15, 0.2, 0.3, 0.5];
+        const undocumented_stops = [0, 0.01, 0.02, 0.05, 0.08, 0.1];
+
+        const high_school_less_stops = [0, 0.05, 0.07, 0.1, 0.2, 0.3];
+        const high_school_stops = [0.1, 0.2, 0.25, 0.3, 0.4, 0.5];
+        const college_stops = [0.3, 0.4, 0.45, 0.5, 0.55, 0.8];
+        const graduate_stops = [0, 0.05, 0.08, 0.15, 0.2, 0.25];
+
+        const west_asian_stops = [];
+        const black_stops = [];
+        const east_asian_stops = [];
+        const first_nations_stops = [];
+        const latin_stops = [];
+        const south_asian_stops = [];
+        const southeast_asian_stops = [];
+        const white_stops = [];
+
+        // Employment stops
+
+        const wages_stops = [14, 19, 20, 22, 25, 112];
+        const hours_stops = [20, 27, 30, 32, 37, 45];
+        const income_stops = [1200, 1600, 1800, 2000, 3000, 60000];
+        const no_benefits_stops = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+
+        // Housing stops
+
+        const rent_stops = [500, 1000, 1200, 1400, 1500, 2000];
+
+        // Changes the legend according to the variable selected
+
+        function updateLegend(stops_variable) {
+            document.getElementById('stop_0').textContent = stops_variable[0];
+            document.getElementById('stop_1').textContent = stops_variable[1];
+            document.getElementById('stop_2').textContent = stops_variable[2];
+            document.getElementById('stop_3').textContent = stops_variable[3];
+            document.getElementById('stop_4').textContent = stops_variable[4];
+            document.getElementById('stop_5').textContent = stops_variable[5];
+        }
+        
+        map.on('load', () => {
+            // Set the default atmosphere style
+            map.setFog({});
+            map.addSource('wards_wh', {
+                type: 'geojson',
+                data: 'data/wards_wh.geojson',
+                promoteId: 'ward_name'
+            });
+
+            // Adds layers to the map; however they must all be invisible to begin with. Update the id, column name (x2) and the stops in blue (x6) to add a new layer
+            
+            // Food insecurity variables
+
+            map.addLayer({'id': 'adult_hunger', 'source': 'wards_wh', 'layout': {'visibility': 'visible'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'adult_hunger'], ['interpolate', ['linear'], ['to-number', ['get', 'adult_hunger']],
+                        adult_hunger_stops[0], '#f2f2f2', adult_hunger_stops[1], '#fedd81', adult_hunger_stops[2], '#ffc72e',
+                        adult_hunger_stops[3], '#f2b23a', adult_hunger_stops[4], '#e0893e', adult_hunger_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'child_hunger', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'child_hunger'], ['interpolate', ['linear'], ['to-number', ['get', 'child_hunger']],
+                        child_hunger_stops[0], '#f2f2f2', child_hunger_stops[1], '#fedd81', child_hunger_stops[2], '#ffc72e',
+                        child_hunger_stops[3], '#f2b23a', child_hunger_stops[4], '#e0893e', child_hunger_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'use_freq', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'often'], ['interpolate', ['linear'], ['to-number', ['get', 'often']],
+                        use_freq_stops[0], '#f2f2f2', use_freq_stops[1], '#fedd81', use_freq_stops[2], '#ffc72e',
+                        use_freq_stops[3], '#f2b23a', use_freq_stops[4], '#e0893e', use_freq_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'new_clients', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'new'], ['interpolate', ['linear'], ['to-number', ['get', 'new']],
+                        new_clients_stops[0], '#f2f2f2', new_clients_stops[1], '#fedd81', new_clients_stops[2], '#ffc72e',
+                        new_clients_stops[3], '#f2b23a', new_clients_stops[4], '#e0893e', new_clients_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'not_enough_food', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'not_enough_food'], ['interpolate', ['linear'], ['to-number', ['get', 'not_enough_food']],
+                        not_enough_food_stops[0], '#f2f2f2', not_enough_food_stops[1], '#fedd81', not_enough_food_stops[2], '#ffc72e',
+                        not_enough_food_stops[3], '#f2b23a', not_enough_food_stops[4], '#e0893e', not_enough_food_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            
+            // Demographic variables
+
+            map.addLayer({'id': 'disabled', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'disabled'], ['interpolate', ['linear'], ['to-number', ['get', 'disabled']],
+                        disabled_stops[0], '#f2f2f2', disabled_stops[1], '#fedd81', disabled_stops[2], '#ffc72e',
+                        disabled_stops[3], '#f2b23a', disabled_stops[4], '#e0893e', disabled_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'lgbtq', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'lgbtq'], ['interpolate', ['linear'], ['to-number', ['get', 'lgbtq']],
+                        lgbtq_stops[0], '#f2f2f2', lgbtq_stops[1], '#fedd81', lgbtq_stops[2], '#ffc72e',
+                        lgbtq_stops[3], '#f2b23a', lgbtq_stops[4], '#e0893e', lgbtq_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+
+            map.addLayer({'id': 'under_18', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'under_18'], ['interpolate', ['linear'], ['to-number', ['get', 'under_18']],
+                        under_18_stops[0], '#f2f2f2', under_18_stops[1], '#fedd81', under_18_stops[2], '#ffc72e',
+                        under_18_stops[3], '#f2b23a', under_18_stops[4], '#e0893e', under_18_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': '18-29', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', '18-29'], ['interpolate', ['linear'], ['to-number', ['get', '18-29']],
+                        age_18_29_stops[0], '#f2f2f2', age_18_29_stops[1], '#fedd81', age_18_29_stops[2], '#ffc72e',
+                        age_18_29_stops[3], '#f2b23a', age_18_29_stops[4], '#e0893e', age_18_29_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': '30-44', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', '30-44'], ['interpolate', ['linear'], ['to-number', ['get', '30-44']],
+                        age_30_44_stops[0], '#f2f2f2', age_30_44_stops[1], '#fedd81', age_30_44_stops[2], '#ffc72e',
+                        age_30_44_stops[3], '#f2b23a', age_30_44_stops[4], '#e0893e', age_30_44_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': '45-64', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', '45-64'], ['interpolate', ['linear'], ['to-number', ['get', '45-64']],
+                        age_45_64_stops[0], '#f2f2f2', age_45_64_stops[1], '#fedd81', age_45_64_stops[2], '#ffc72e',
+                        age_45_64_stops[3], '#f2b23a', age_45_64_stops[4], '#e0893e', age_45_64_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': '65+', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', '65+'], ['interpolate', ['linear'], ['to-number', ['get', '65+']],
+                        over_65_stops[0], '#f2f2f2', over_65_stops[1], '#fedd81', over_65_stops[2], '#ffc72e',
+                        over_65_stops[3], '#f2b23a', over_65_stops[4], '#e0893e', over_65_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+
+             map.addLayer({'id': 'canadian', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'indigenous'], ['interpolate', ['linear'], ['to-number', ['get', 'indigenous']],
+                        canadian_stops[0], '#f2f2f2', canadian_stops[1], '#fedd81', canadian_stops[2], '#ffc72e',
+                        canadian_stops[3], '#f2b23a', canadian_stops[4], '#e0893e', canadian_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'permanent_resident', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'permanent_resident'], ['interpolate', ['linear'], ['to-number', ['get', '18-29']],
+                        pr_stops[0], '#f2f2f2', pr_stops[1], '#fedd81', pr_stops[2], '#ffc72e',
+                        pr_stops[3], '#f2b23a', pr_stops[4], '#e0893e', pr_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'refugee', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'refugee'], ['interpolate', ['linear'], ['to-number', ['get', 'refugee']],
+                        refugee_stops[0], '#f2f2f2', refugee_stops[1], '#fedd81', refugee_stops[2], '#ffc72e',
+                        refugee_stops[3], '#f2b23a', refugee_stops[4], '#e0893e', refugee_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'cuaet', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'cuaet'], ['interpolate', ['linear'], ['to-number', ['get', 'cuaet']],
+                        cuaet_stops[0], '#f2f2f2', cuaet_stops[1], '#fedd81', cuaet_stops[2], '#ffc72e',
+                        cuaet_stops[3], '#f2b23a', cuaet_stops[4], '#e0893e', cuaet_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'temporary', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'temporary'], ['interpolate', ['linear'], ['to-number', ['get', 'temporary']],
+                        temporary_stops[0], '#f2f2f2', temporary_stops[1], '#fedd81', temporary_stops[2], '#ffc72e',
+                        temporary_stops[3], '#f2b23a', temporary_stops[4], '#e0893e', temporary_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'undocumented', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'undocumented'], ['interpolate', ['linear'], ['to-number', ['get', 'undocumented']],
+                        undocumented_stops[0], '#f2f2f2', undocumented_stops[1], '#fedd81', undocumented_stops[2], '#ffc72e',
+                        undocumented_stops[3], '#f2b23a', undocumented_stops[4], '#e0893e', undocumented_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'high_school_less', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'high_school_less'], ['interpolate', ['linear'], ['to-number', ['get', 'high_school_less']],
+                        high_school_less_stops[0], '#f2f2f2', high_school_less_stops[1], '#fedd81', high_school_less_stops[2], '#ffc72e',
+                        high_school_less_stops[3], '#f2b23a', high_school_less_stops[4], '#e0893e', high_school_less_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'high_school', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'high_school'], ['interpolate', ['linear'], ['to-number', ['get', 'high_school']],
+                        high_school_stops[0], '#f2f2f2', high_school_stops[1], '#fedd81', high_school_stops[2], '#ffc72e',
+                        high_school_stops[3], '#f2b23a', high_school_stops[4], '#e0893e', high_school_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'degree', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'degree'], ['interpolate', ['linear'], ['to-number', ['get', 'degree']],
+                        college_stops[0], '#f2f2f2', college_stops[1], '#fedd81', college_stops[2], '#ffc72e',
+                        college_stops[3], '#f2b23a', college_stops[4], '#e0893e', college_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'graduate', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'graduate'], ['interpolate', ['linear'], ['to-number', ['get', 'graduate']],
+                        graduate_stops[0], '#f2f2f2', graduate_stops[1], '#fedd81', graduate_stops[2], '#ffc72e',
+                        graduate_stops[3], '#f2b23a', graduate_stops[4], '#e0893e', graduate_stops[5], '#ca6749',], '#ffffff'
+                    ]}});        
+
+            // Income and employment variables
+
+            map.addLayer({'id': 'wages', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'wages'], ['interpolate', ['linear'], ['to-number', ['get', 'wages']],
+                        wages_stops[0], '#f2f2f2', wages_stops[1], '#fedd81', wages_stops[2], '#ffc72e',
+                        wages_stops[3], '#f2b23a', wages_stops[4], '#e0893e', wages_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'hours', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'hours'], ['interpolate', ['linear'], ['to-number', ['get', 'hours']],
+                        hours_stops[0], '#f2f2f2', hours_stops[1], '#fedd81', hours_stops[2], '#ffc72e',
+                        hours_stops[3], '#f2b23a', hours_stops[4], '#e0893e', hours_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'amount', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'income'], ['interpolate', ['linear'], ['to-number', ['get', 'income']],
+                        income_stops[0], '#f2f2f2', income_stops[1], '#fedd81', income_stops[2], '#ffc72e',
+                        income_stops[3], '#f2b23a', income_stops[4], '#e0893e', income_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+            map.addLayer({'id': 'benefits', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'no_benefits'], ['interpolate', ['linear'], ['to-number', ['get', 'no_benefits']],
+                        no_benefits_stops[0], '#f2f2f2', no_benefits_stops[1], '#fedd81', no_benefits_stops[2], '#ffc72e',
+                        no_benefits_stops[3], '#f2b23a', no_benefits_stops[4], '#e0893e', no_benefits_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+
+            // Housing variables
+
+            map.addLayer({'id': 'rent', 'source': 'wards_wh', 'layout': {'visibility': 'none'}, 'type': 'fill', 'paint': {'fill-color': ['case',
+                        ['has', 'rent'], ['interpolate', ['linear'], ['to-number', ['get', 'rent']],
+                        rent_stops[0], '#f2f2f2', rent_stops[1], '#fedd81', rent_stops[2], '#ffc72e',
+                        rent_stops[3], '#f2b23a', rent_stops[4], '#e0893e', rent_stops[5], '#ca6749',], '#ffffff'
+                    ]}});
+
+            all_layers.forEach(layer => {
+                map.on('click', layer, (e) => {
+                    if (e.features.length > 0) {
+                        const properties = e.features[0].properties;
+                        updateSidePanelInfo(properties);
+                    }
+                });
+            });
+
+            // Shows ward boundaries in black
+            
+            map.addLayer({
+                id: 'ward-boundaries-line',
+                type: 'line',
+                layout: {},
+                source: 'wards_wh',
+                paint: {
+                    'line-color': '#231F20',
+                    'line-width': 1.5,
+                    'line-opacity': 0.6
+                }
+            });
+        });
+
+        // Groups layers together. Every layer must be added to its respective category, otherwise the map will not work
+        
+        const insecurity_layers = ['child_hunger', 'use_freq', 'new_clients', 'adult_hunger', 'not_enough_food']
+        const demographic_layers = ['disabled', 'lgbtq', 'under_18', '18-29', '30-44', '45-64', '65+', 'canadian', 'permanent_resident', 'refugee', 'cuaet', 'temporary', 'undocumented', 'high_school_less', 'high_school', 'degree', 'graduate']
+        const employment_layers = ['wages', 'hours', 'amount', 'benefits']
+        const housing_layers = ['rent']
+        const all_layers = [insecurity_layers, demographic_layers, employment_layers, housing_layers]
+
+        // The below functions change the visibility of layers depending on the variable selected by the user
+        // These functions need to be 'called' when the data selection changes. This is done at the end of the code
+        
+        function handleInsecurity() {
+            var insecurity_selection = document.getElementById("food_insecurity").value;
+            var change_selection = document.getElementById("change_over_time").value;
+            if (insecurity_selection == 'adult') {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                updateLegend(adult_hunger_stops);
+                map.setLayoutProperty('adult_hunger', 'visibility', 'visible');
+            } else {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+            }
+            if (insecurity_selection == 'child') {
+                updateLegend(child_hunger_stops);
+                map.setLayoutProperty('child_hunger', 'visibility', 'visible');
+            }
+            if (insecurity_selection == 'freq') {
+                updateLegend(use_freq_stops);
+                map.setLayoutProperty('use_freq', 'visibility', 'visible');
+                map.setLayoutProperty('change_often', 'visibility', 'none');
+            }
+            if (insecurity_selection == 'new') {
+                updateLegend(new_clients_stops);
+                map.setLayoutProperty('new_clients', 'visibility', 'visible');
+            }
+            if (insecurity_selection == 'enough') {
+                updateLegend(not_enough_food_stops);
+                map.setLayoutProperty('not_enough_food', 'visibility', 'visible');
+            }
+        }
+        
+        function handleDemographics () {
+            var dem_selection = document.getElementById("demographics").value;
+            if (dem_selection == 'disabled') {
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                updateLegend(disabled_stops);
+                map.setLayoutProperty('disabled', 'visibility', 'visible');
+            } else {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+            }
+            if (dem_selection == 'lgbtq') {
+                updateLegend(lgbtq_stops);
+                map.setLayoutProperty('lgbtq', 'visibility', 'visible');
+            }
+            if (dem_selection == 'under_18') {
+                updateLegend(under_18_stops);
+                map.setLayoutProperty('under_18', 'visibility', 'visible');
+            }
+            if (dem_selection == '18-29') {
+                updateLegend(age_18_29_stops);
+                map.setLayoutProperty('18-29', 'visibility', 'visible');
+            }
+            if (dem_selection == '30-44') {
+                updateLegend(age_30_44_stops);
+                map.setLayoutProperty('30-44', 'visibility', 'visible');
+            }
+            if (dem_selection == '45-64') {
+                updateLegend(age_45_64_stops);
+                map.setLayoutProperty('45-64', 'visibility', 'visible');
+            }
+            if (dem_selection == '65+') {
+                updateLegend(over_65_stops);
+                map.setLayoutProperty('65+', 'visibility', 'visible');
+            }
+            if (dem_selection == 'canadian') {
+                updateLegend(canadian_stops);
+                map.setLayoutProperty('canadian', 'visibility', 'visible');
+            }
+            if (dem_selection == 'pr') {
+                updateLegend(pr_stops);
+                map.setLayoutProperty('permanent_resident', 'visibility', 'visible');
+            }
+            if (dem_selection == 'refugee') {
+                updateLegend(refugee_stops);
+                map.setLayoutProperty('refugee', 'visibility', 'visible');
+            }
+            if (dem_selection == 'cuaet') {
+                updateLegend(cuaet_stops);
+                map.setLayoutProperty('cuaet', 'visibility', 'visible');
+            }
+            if (dem_selection == 'temporary') {
+                updateLegend(temporary_stops);
+                map.setLayoutProperty('temporary', 'visibility', 'visible');
+            }
+            if (dem_selection == 'undocumented') {
+                updateLegend(undocumented_stops);
+                map.setLayoutProperty('undocumented', 'visibility', 'visible');
+            }
+            if (dem_selection == 'high_school_less') {
+                updateLegend(high_school_less_stops);
+                map.setLayoutProperty('high_school_less', 'visibility', 'visible');
+            }
+            if (dem_selection == 'high_school') {
+                updateLegend(high_school_stops);
+                map.setLayoutProperty('high_school', 'visibility', 'visible');
+            }
+            if (dem_selection == 'degree') {
+                updateLegend(college_stops);
+                map.setLayoutProperty('degree', 'visibility', 'visible');
+            }
+            if (dem_selection == 'graduate') {
+                updateLegend(graduate_stops);
+                map.setLayoutProperty('graduate', 'visibility', 'visible');
+            }
+        }
+
+        function handleEmployment () {
+            var emp_selection = document.getElementById("income").value;
+            if (emp_selection == 'amount') {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                updateLegend(income_stops);
+                map.setLayoutProperty('amount', 'visibility', 'visible');
+            } else {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+            }
+            if (emp_selection == 'wages') {
+                updateLegend(wages_stops);
+                map.setLayoutProperty('wages', 'visibility', 'visible');
+            }
+            if (emp_selection == 'hours') {
+                updateLegend(hours_stops);
+                map.setLayoutProperty('hours', 'visibility', 'visible');
+            }
+            if (emp_selection == 'benefits') {
+                updateLegend(no_benefits_stops);
+                map.setLayoutProperty('benefits', 'visibility', 'visible');
+            }
+        }
+
+        function handleHousing () {
+            var housing_selection = document.getElementById("household").value;
+            if (housing_selection == 'rent') {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                updateLegend(rent_stops);
+                map.setLayoutProperty('rent', 'visibility', 'visible');
+            } else {
+                demographic_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                employment_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                housing_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+                insecurity_layers.forEach(layer => {map.setLayoutProperty(layer, 'visibility', 'none')});
+            }
+        }
+        
+        // Runs functions depending on the data selection.
+        // An event listener could potentially be added for the checkbox, and a new function created to show change over time as a point layer
+
+        document.getElementById("food_insecurity").addEventListener("change", handleInsecurity);
+        document.getElementById("demographics").addEventListener("change", handleDemographics);
+        document.getElementById("income").addEventListener("change", handleEmployment);
+        document.getElementById("household").addEventListener("change", handleHousing);
+
+        </script>
+        </div>
+    </div>
+</body>
+</html>
